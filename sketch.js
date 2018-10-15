@@ -63,7 +63,7 @@ function setup() {
     reverb.set(4,2);
     Engine.run(engine);
     
-    backgroundColour = color(0,0,0);
+    backgroundColour = color(0,0,10);
     cursor(CROSS);
     mouseBounds = Bounds.create()
 }
