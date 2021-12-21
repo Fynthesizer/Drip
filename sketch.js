@@ -564,7 +564,7 @@ function mousePressed() {
         }
 
         if(mouseY < zoneY) drippers.push(new Dripper(mouseX,round(random(2,6))));
-        else bars.push(new Bar(mouseX,mouseY,random(50,300),random(25,50),random(Math.PI/-4,Math.PI/4)));
+        else bars.push(new Bar(mouseX,mouseY,random(50,200),random(25,50),random(Math.PI/-4,Math.PI/4)));
     }
 }
 
@@ -594,7 +594,7 @@ function checkMouseTarget(){
 function keyPressed() {
   if(keyCode == 66){
       //bars.push(new Bar(mouseX,mouseY,random(widthRange.min,widthRange.max/2),random(20,40),random(-0.5,0.5)));
-      bars.push(new Bar(mouseX,mouseY,random(50,300),random(25,50),random(Math.PI/-4,Math.PI/4)));
+      bars.push(new Bar(mouseX,mouseY,random(50,200),random(25,50),random(Math.PI/-4,Math.PI/4)));
   }
     if(keyCode == 68){
       drippers.push(new Dripper(mouseX,round(random(2,6))));
