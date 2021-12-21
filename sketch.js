@@ -30,14 +30,15 @@ var reverb;
 
 var collisionThreshold = 2;
 
-var equalTemperament = true;
+var tuneNotes = true;
+var keySig = [0,1,2,3,4,5,6,7,8,9,10,11];
 var drawWaves = true;
 
 var zoneY = 50;
 
 var maxFreq = 80000;
-var modMultiplier = 10;
-var modIndex = 11;
+var modMultiplier = 3;
+var modIndex = 10;
 var widthRange = {min:50,max:1000};
 
 var backgroundColour;
@@ -49,7 +50,6 @@ var tempo = 15;
 for (var i = 1; i <= 8; i ++){
     setInterval(metronome,(60000/tempo)/i,i);
 }
-
 
 function preload() {
 
@@ -63,7 +63,7 @@ function setup() {
     reverb.set(4,2);
     Engine.run(engine);
     
-    backgroundColour = color(0,0,10);
+    backgroundColour = color(19,21,23);
     cursor(CROSS);
     mouseBounds = Bounds.create()
 }
@@ -137,29 +137,36 @@ class Dripper{
         vertex(this.x-5,zoneY-20);
         vertex(this.x-5,zoneY+10);
         endShape(CLOSE);
+        
         beginShape();
         vertex(this.x+32,zoneY-20);
         vertex(this.x+32,zoneY-30);
         vertex(this.x+28,zoneY-30);
         vertex(this.x+28,zoneY-20);
         endShape(CLOSE);
+        
         if(this.mouseTarget == "Turn" || this.transformMode == "Turn") strokeWeight(2);
         else if (this.mouseTarget == null && this.transformMode == null) strokeWeight(1);
+        
         beginShape();
         vertex(this.x+xPositions[2],zoneY-33);
         vertex(this.x+xPositions[2],zoneY-37);
         vertex(this.x+xPositions[3],zoneY-37);
         vertex(this.x+xPositions[3],zoneY-33);
         endShape(CLOSE);
+        
         if (this.mouseTarget == null && this.transformMode == null) strokeWeight(1);
+        
         beginShape();
         vertex(this.x+35,zoneY-30);
         vertex(this.x+35,zoneY-40);
         vertex(this.x+25,zoneY-40);
         vertex(this.x+25,zoneY-30);
         endShape(CLOSE);
+        
         if(this.mouseTarget == "Turn" || this.transformMode == "Turn") strokeWeight(2);
         else if (this.mouseTarget == null && this.transformMode == null) strokeWeight(1);
+        
         beginShape();
         vertex(this.x+xPositions[1],zoneY-33);
         vertex(this.x+xPositions[1],zoneY-37);
@@ -243,23 +250,22 @@ class Bar{
         this.a = a;
         this.struck = 0.0;
         this.freq = maxFreq/this.w;
-        if(equalTemperament) {this.freq = freqToMidi(this.freq); this.freq = midiToFreq(this.freq)};
-        this.modAmount = map(h,5,50,this.freq*modMultiplier,0);
+        if(tuneNotes) {
+            this.freq = freqToMidi(this.freq); 
+            this.freq = tuneNote(this.freq);
+            this.freq = midiToFreq(this.freq);
+        }
+        this.modAmount = map(this.h,15,40,this.freq*modMultiplier,0);
         
-        this.pitchEnv = new p5.Env();
-        this.pitchEnv.setADSR(0.0,0.03,0.0,0.03);
         
         this.env = new p5.Env();
         this.env.setADSR(0.015,0.5,0.0,0.5);
         this.env.setRange(0.2,0.0);
         
-        this.modEnv = new p5.Env();
-        this.modEnv.setADSR(0.02,0.1,0.0,0.1);
-        this.modEnv.setRange(1.0,0.0);
         
+        //Frequency Mod
         this.mod = new p5.Oscillator();
         this.mod.amp(this.modAmount);
-        this.mod.amp(this.modEnv);
         this.mod.freq(this.freq*modIndex);
         this.mod.disconnect();
         this.mod.start();
@@ -268,7 +274,6 @@ class Bar{
         this.osc.amp(this.env);
         this.osc.freq(this.freq);
         this.osc.freq(this.mod);
-        //this.osc.freq(this.pitchEnv.mult(200));
         this.osc.pan(map(x,0,width,-1,1));
         this.osc.connect(reverb);
         this.osc.start();
@@ -283,8 +288,7 @@ class Bar{
             {x0: this.vertices[1].x, y0:this.vertices[1].y, x1: this.vertices[2].x, y1:this.vertices[2].y, hovered: false},
             {x0: this.vertices[2].x, y0:this.vertices[2].y, x1: this.vertices[3].x, y1:this.vertices[3].y, hovered: false},
             {x0: this.vertices[3].x, y0:this.vertices[3].y, x1: this.vertices[0].x, y1:this.vertices[0].y, hovered: false}];
-        
-        
+
         this.mouseOver = false;
         this.mouseSelected = false;
         this.transformMode = null;
@@ -302,7 +306,6 @@ class Bar{
         var angle = this.body.angle;
         var colour = lerpColor(backgroundColour,color(255),this.struck);
         this.vertices = this.body.vertices;
-
 
         this.edges = [
             {x0: this.vertices[0].x, y0:this.vertices[0].y, x1: this.vertices[1].x, y1:this.vertices[1].y},
@@ -364,8 +367,8 @@ class Bar{
         var centre = Vertices.centre(this.body.vertices);
         var mouseDistance = dist(centre.x,centre.y,mouseX,mouseY);
         if(this.transformMode == null){
-            if (isMouseOnLine(this.edges[0],4) || isMouseOnLine(this.edges[2],4)) {this.mouseTarget = "ScaleHeight"; return true;}
-            else if (isMouseOnLine(this.edges[1],4) || isMouseOnLine(this.edges[3],4)) {this.mouseTarget = "ScaleWidth"; return true;}
+            if (isMouseOnLine(this.edges[0],6) || isMouseOnLine(this.edges[2],6)) {this.mouseTarget = "ScaleHeight"; return true;}
+            else if (isMouseOnLine(this.edges[1],6) || isMouseOnLine(this.edges[3],6)) {this.mouseTarget = "ScaleWidth"; return true;}
             else if (Vertices.contains(this.body.vertices,{x:mouseX,y:mouseY})) {this.mouseTarget = "Move"; return true;}
             else if(mouseDistance<75){
                 strokeWeight(1);
@@ -380,6 +383,7 @@ class Bar{
         }
         else return false;
     }
+    
     drawArrow(side){
         switch(side){
             case "Top":
@@ -435,7 +439,7 @@ class Bar{
                 y1:(this.edges[1].y0+this.edges[1].y1)/2});
             this.h = dist(nearestPoint.x,nearestPoint.y,mouseX,mouseY)*2;
             //this.h -= mouseMoveY;
-            this.h = constrain(this.h,10,50);
+            this.h = constrain(this.h,15,50);
             var newX1 = this.body.vertices[2].x+(this.h*cos(this.body.angle-(Math.PI/2)));
             var newY1 = this.body.vertices[2].y+(this.h*sin(this.body.angle-(Math.PI/2)));
             var newX2 = this.body.vertices[3].x+(this.h*cos(this.body.angle-(Math.PI/2)));
@@ -478,8 +482,12 @@ class Bar{
         var pos = Vertices.centre(this.body.vertices);
         this.osc.pan(map(pos.x,0,width,-1,1),0.1);
         this.freq = maxFreq/this.w;
-        if(equalTemperament) {this.freq = freqToMidi(this.freq); this.freq = midiToFreq(this.freq)};
-        this.modAmount = map(this.h,5,50,this.freq*modMultiplier,0);
+        if(tuneNotes) {
+            this.freq = freqToMidi(this.freq); 
+            this.freq = tuneNote(this.freq);
+            this.freq = midiToFreq(this.freq);
+        }
+        this.modAmount = map(this.h,10,40,this.freq*modMultiplier,0);
         this.mod.amp(this.modAmount,0.1);
         this.osc.freq(this.freq,0.2);
         this.mod.freq(this.freq*modIndex,0.2);
@@ -497,14 +505,19 @@ class Bar{
     }
     
     strike(magnitude,x,y){
-        if(magnitude>collisionThreshold){
+        if(magnitude > collisionThreshold){
             this.env.setRange(map(magnitude,0,20,0.0,0.3),0.0);
-            this.modEnv.setRange(map(magnitude,0,20,0.0,1.0),0.0);
             this.env.play();
-            this.modEnv.play();
-            this.pitchEnv.play();
             this.struck = map(magnitude,0,20,0.0,1.0);
             if(drawWaves)waves.push(new wave(x,y,magnitude));
+        }
+        
+        //Bug fix for magnitude 0 collisions when bar first spawns
+        else if (magnitude == 0){
+            this.env.setRange(0.15);
+            this.env.play();
+            this.struck = 0.5;
+            if(drawWaves)waves.push(new wave(x,y,10));
         }
     }
     
@@ -539,18 +552,20 @@ class wave{
 }
 
 function mousePressed() {
-    mouseStartX = mouseX;
-    mouseStartY = mouseY
-    
-    for(let b of bars){
-        if(b.checkIfClicked()) return;
+    if(mouseButton === LEFT){
+        mouseStartX = mouseX;
+        mouseStartY = mouseY
+
+        for(let b of bars){
+            if(b.checkIfClicked()) return;
+        }
+        for(let d of drippers){
+            if(d.checkIfClicked()) return;
+        }
+
+        if(mouseY < zoneY) drippers.push(new Dripper(mouseX,round(random(2,6))));
+        else bars.push(new Bar(mouseX,mouseY,random(50,300),random(25,50),random(Math.PI/-4,Math.PI/4)));
     }
-    for(let d of drippers){
-        if(d.checkIfClicked()) return;
-    }
-    
-    if(mouseY < zoneY) drippers.push(new Dripper(mouseX,round(random(1,8))));
-    else bars.push(new Bar(mouseX,mouseY,random(50,200),random(10,50),random(Math.PI/-4,Math.PI/4)));
 }
 
 function mouseReleased() {
@@ -579,10 +594,10 @@ function checkMouseTarget(){
 function keyPressed() {
   if(keyCode == 66){
       //bars.push(new Bar(mouseX,mouseY,random(widthRange.min,widthRange.max/2),random(20,40),random(-0.5,0.5)));
-      bars.push(new Bar(mouseX,mouseY,random(50,200),random(10,50),random(Math.PI/-4,Math.PI/4)));
+      bars.push(new Bar(mouseX,mouseY,random(50,300),random(25,50),random(Math.PI/-4,Math.PI/4)));
   }
     if(keyCode == 68){
-      drippers.push(new Dripper(mouseX,round(map(mouseY,0,height,1,8))));
+      drippers.push(new Dripper(mouseX,round(random(2,6))));
   }
 }
 
@@ -633,6 +648,19 @@ function printTotalObjects(){
     print("Drippers: " + drippers.length);
     print("Waves: " + waves.length);
     print("Total: " + (bars.length + droplets.length + drippers.length + waves.length));
+}
+
+function tuneNote(note){
+    var keys = keySig.slice();
+    var nearestA = Math.floor(note/12)*12;
+    for(i = 0; i < keys.length; i ++){
+        keys[i] += nearestA;
+    }
+    var closest = keys.reduce(function(prev, curr) {
+        return (Math.abs(curr - note) < Math.abs(prev - note) ? curr : prev);
+    });
+    
+    return closest;
 }
 
 function windowResized() {
