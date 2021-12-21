@@ -31,7 +31,7 @@ var reverb;
 var collisionThreshold = 2;
 
 var tuneNotes = true;
-var keySig = [0,1,2,3,4,5,6,7,8,9,10,11];
+var keySig = [0,2,3,5,7,9,10];
 var drawWaves = true;
 
 var zoneY = 50;
@@ -60,7 +60,7 @@ function setup() {
     engine = Engine.create({enableSleeping: true});
     world = engine.world;
     reverb = new p5.Reverb();
-    reverb.set(4,2);
+    reverb.set(6,2);
     Engine.run(engine);
     
     backgroundColour = color(19,21,23);
@@ -266,7 +266,7 @@ class Bar{
         //Frequency Mod
         this.mod = new p5.Oscillator();
         this.mod.amp(this.modAmount);
-        this.mod.freq(this.freq*modIndex);
+        this.mod.freq(this.freq*modIndex+800);
         this.mod.disconnect();
         this.mod.start();
         
@@ -489,8 +489,8 @@ class Bar{
         }
         this.modAmount = map(this.h,10,40,this.freq*modMultiplier,0);
         this.mod.amp(this.modAmount,0.1);
-        this.osc.freq(this.freq,0.2);
-        this.mod.freq(this.freq*modIndex,0.2);
+        this.osc.freq(this.freq,0.25);
+        this.mod.freq(this.freq*modIndex+800,0.4);
         //this.osc.freq(this.pitchEnv.mult(200));
     }
     
