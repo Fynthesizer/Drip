@@ -78,8 +78,6 @@ function setup() {
     isMobile = true;
     }
     
-    print(isMobile);
-    
 }
 
 function draw() {
@@ -88,7 +86,7 @@ function draw() {
     strokeWeight(1);
     line(0, zoneY, width, zoneY);
 
-    if(!isMobile) checkMouseTarget();
+    if(!isMobile || isMobile && touches.length > 0)checkMouseTarget();
 
     for (let w of waves) {
         w.update();
@@ -194,7 +192,8 @@ class Dripper {
         endShape(CLOSE);
 
         if (this.transformMode == "Move") {
-            this.x += (mouseX - pmouseX);
+            if (!isMobile) this.x += (mouseX - pmouseX);
+            else this.x = mouseX;
             if (mouseX <= 5 || mouseX >= width - 5) this.readyToDelete = true;
             else this.readyToDelete = false;
         }
@@ -208,16 +207,20 @@ class Dripper {
             if (mouseY < zoneY && mouseY > zoneY - 20) this.mouseTarget = "Move";
             else if (mouseY < zoneY - 20) this.mouseTarget = "Turn";
             else this.mouseTarget = null;
-        } else this.mouseTarget = null;
+        } 
+        else this.mouseTarget = null;
     }
 
     checkIfClicked() {
+        if(isMobile) this.checkMouseTarget();
         this.transformMode = this.mouseTarget;
         if (this.transformMode != null) return true;
     }
 
     mouseUp() {
+        print("mouseUp");
         this.transformMode = null;
+        if (isMobile) this.mouseTarget = null;
         if (this.readyToDelete) this.destroy();
     }
 
@@ -428,7 +431,7 @@ class Bar {
             }
         }
 
-        if (this.transformMode != null) this.updateTransform(this.transformMode);
+        //if (this.transformMode != null && !isMobile) this.updateTransform(this.transformMode);
     }
 
     checkMouseTarget() {
@@ -531,14 +534,16 @@ class Bar {
     }
 
     updateTransform(mode) {
+        print(mode);
         var mouseMoveX = (mouseX - pmouseX);
         var mouseMoveY = (mouseY - pmouseY);
         var centre = Vertices.centre(this.body.vertices);
+        
         switch (mode) {
             case "Move":
                 Body.setPosition(this.body, {
-                    x: this.body.position.x + mouseMoveX,
-                    y: this.body.position.y + mouseMoveY
+                    x: mouseX,
+                    y: mouseY
                 });
                 if (mouseX <= 5 || mouseX >= width - 5 || mouseY <= zoneY || mouseY >= height - 5) this.readyToDelete = true;
                 else this.readyToDelete = false;
@@ -633,12 +638,14 @@ class Bar {
     }
 
     checkIfClicked() {
+        if (isMobile) this.checkMouseTarget();
         this.transformMode = this.mouseTarget;
         if (this.transformMode != null) return true;
     }
 
     mouseUp() {
         this.transformMode = null;
+        if (isMobile) this.mouseTarget = null;
         if (this.readyToDelete) this.destroy();
     }
 
@@ -689,9 +696,9 @@ class wave {
     }
 }
 
-function touchStarted() {
-    print("touch at " + mouseX + ", " + mouseY);
-    if (mouseButton != RIGHT) {
+function mousePressed() {
+    if (!isMobile && mouseButton != RIGHT || isMobile && event.type == 'touchstart') {
+
         mouseStartX = mouseX;
         mouseStartY = mouseY
 
@@ -713,15 +720,25 @@ function touchStarted() {
     }
 }
 
-function touchEnded() {
-    for (let b of bars) {
-        b.mouseUp();
+function mouseReleased() {
+    if(!isMobile || isMobile){
+        
+        print("release");
+        for (let b of bars) {
+            b.mouseUp();
+        }
+        for (let d of drippers) {
+            d.mouseUp();
+        }
     }
-    for (let d of drippers) {
-        d.mouseUp();
-    }
+}
+
+function touchMoved() {
+   
+        for (let b of bars) {
+            if(b.transformMode != null) b.updateTransform(b.transformMode);
+        }
     
-    print("release");
 }
 
 function checkMouseTarget() {
@@ -752,6 +769,8 @@ function keyPressed() {
         drippers.push(new Dripper(mouseX, round(random(2, 6))));
     }
 }
+
+
 
 function keyReleased() {
 
