@@ -64,6 +64,7 @@ function setup() {
     Engine.run(engine);
     
     backgroundColour = color(19,21,23);
+    smooth();
     cursor(CROSS);
     mouseBounds = Bounds.create()
 }
@@ -96,7 +97,6 @@ class Dripper{
         this.rate = rate;
         
         this.mouseOver = false;
-        this.mouseDragging = false;
         this.readyToDelete = false;
         
         this.mouseTarget = null;
@@ -551,8 +551,8 @@ class wave{
     }
 }
 
-function mousePressed() {
-    if(mouseButton === LEFT){
+function touchStarted() {
+    if(mouseButton != RIGHT){
         mouseStartX = mouseX;
         mouseStartY = mouseY
 
@@ -565,16 +565,19 @@ function mousePressed() {
 
         if(mouseY < zoneY) drippers.push(new Dripper(mouseX,round(random(2,6))));
         else bars.push(new Bar(mouseX,mouseY,random(50,200),random(20,50),random(Math.PI/-4,Math.PI/4)));
+        
+        //print("touch");
     }
 }
 
-function mouseReleased() {
+function touchEnded() {
     for(let b of bars){
         b.mouseUp();
     }
     for(let d of drippers){
         d.mouseUp();
     }
+    //print("release");
 }
 
 function checkMouseTarget(){
