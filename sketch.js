@@ -78,8 +78,7 @@ function setup() {
     isMobile = true;
     }
     
-    if(!isMobile)createCanvas(window.innerWidth, window.innerHeight);
-    else createCanvas(window.innerWidth/2, window.innerHeight/2);
+    createCanvas(window.innerWidth, window.innerHeight);
     
 }
 
