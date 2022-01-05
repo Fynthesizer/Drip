@@ -38,7 +38,7 @@ var zoneY = 50;
 
 var maxFreq = 80000;
 var modMultiplier = 3;
-var modIndex = 10;
+var modIndex = 20;
 var widthRange = {
     min: 50,
     max: 1000
@@ -284,28 +284,44 @@ class Bar {
             this.freq = tuneNote(this.freq);
             this.freq = midiToFreq(this.freq);
         }
-        this.modAmount = map(this.h, 15, 40, this.freq * modMultiplier, 0);
+        this.modAmount = map(this.h, 15, 50, this.freq * modMultiplier, 0);
 
-
+        //Main Envelope
         this.env = new p5.Env();
-        this.env.setADSR(0.015, 0.5, 0.0, 0.5);
+        this.env.setADSR(0.001, 0.5, 0.0, 0.5);
         this.env.setRange(0.2, 0.0);
-
-
+        
+        //Pitch Envelope
+        this.pitchEnv = new p5.Env();
+        this.pitchEnv.setADSR(0.0, 0.02, 0.0, 1.0);
+        this.pitchEnv.setRange(-6.0, 0.0);
+        
         //Frequency Mod
         this.mod = new p5.Oscillator();
         this.mod.amp(this.modAmount);
-        this.mod.freq(this.freq * modIndex + 800);
+        this.mod.freq(this.freq * modIndex);
         this.mod.disconnect();
         this.mod.start();
-
+        
+        //Main Oscillator
         this.osc = new p5.Oscillator();
         this.osc.amp(this.env);
         this.osc.freq(this.freq);
         this.osc.freq(this.mod);
+        //this.osc.freq(this.pitchEnv.mult(50));
         this.osc.pan(map(x, 0, width, -1, 1));
         this.osc.connect(reverb);
         this.osc.start();
+        
+        //Second Oscillator
+        this.osc2 = new p5.Oscillator();
+        this.osc2.amp(this.env);
+        this.osc2.freq(this.freq*8);
+        //this.osc.freq(this.mod);
+        //this.osc.freq(this.pitchEnv.mult(50));
+        this.osc2.pan(map(x, 0, width, -1, 1));
+        this.osc2.connect(reverb);
+        this.osc2.start();
 
         this.body = Bodies.rectangle(x, y, w, h, {
             isStatic: true,
@@ -632,11 +648,11 @@ class Bar {
             this.freq = tuneNote(this.freq);
             this.freq = midiToFreq(this.freq);
         }
-        this.modAmount = map(this.h, 10, 40, this.freq * modMultiplier, 0);
+        this.modAmount = map(this.h, 15, 50, this.freq * modMultiplier, 0);
         this.mod.amp(this.modAmount, 0.1);
         this.osc.freq(this.freq, 0.25);
-        this.mod.freq(this.freq * modIndex + 800, 0.4);
-        //this.osc.freq(this.pitchEnv.mult(200));
+        this.osc2.freq(this.freq * 8, 0.25);
+        this.mod.freq(this.freq * modIndex, 0.4);
     }
 
     checkIfClicked() {
@@ -654,6 +670,7 @@ class Bar {
     strike(magnitude, x, y) {
         if (magnitude > collisionThreshold) {
             this.env.setRange(map(magnitude, 0, 20, 0.0, 0.3), 0.0);
+            this.pitchEnv.play();
             this.env.play();
             this.struck = map(magnitude, 0, 20, 0.0, 1.0);
             if (drawWaves) waves.push(new wave(x, y, magnitude));
@@ -662,6 +679,7 @@ class Bar {
         //Bug fix for magnitude 0 collisions when bar first spawns
         else if (magnitude == 0) {
             this.env.setRange(0.15);
+            this.pitchEnv.play();
             this.env.play();
             this.struck = 0.5;
             if (drawWaves) waves.push(new wave(x, y, 10));
@@ -716,7 +734,7 @@ function mousePressed() {
             return;
         }
         else {
-            bars.push(new Bar(mouseX, mouseY, random(50, 200), random(20, 50), random(Math.PI / -4, Math.PI / 4)));
+            bars.push(new Bar(mouseX, mouseY, random(50, 300), random(20, 50), random(Math.PI / -4, Math.PI / 4)));
             return;
         }
     }
