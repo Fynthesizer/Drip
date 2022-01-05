@@ -220,7 +220,6 @@ class Dripper {
     }
 
     mouseUp() {
-        print("mouseUp");
         this.transformMode = null;
         if (isMobile) this.mouseTarget = null;
         if (this.readyToDelete) this.destroy();
@@ -410,7 +409,8 @@ class Bar {
         if (this.readyToDelete) stroke(255, 127);
         else stroke(255);
         strokeWeight(1);
-
+        
+        
         strokeWeight(2);
         if (this.mouseTarget == "ScaleHeight" || this.transformMode == "ScaleHeight") {
             this.drawArrow("Top");
@@ -420,12 +420,19 @@ class Bar {
             this.drawArrow("Left");
             this.drawArrow("Right");
             strokeWeight(1);
-        } else if (this.mouseTarget == "Move" || this.transformMode == "Move") strokeWeight(2);
+        } else if (this.mouseTarget == "Move" || this.transformMode == "Move") {
+            strokeWeight(2);
+            //this.drawArrow("Left");
+            //this.drawArrow("Right");
+            //this.drawArrow("Top");
+            //this.drawArrow("Bottom");
+            //strokeWeight(1);
+        }
         else if (this.mouseTarget == "Turn" || this.transformMode == "Turn") {
             strokeWeight(2);
             stroke(255);
             noFill();
-            ellipse(centre.x, centre.y, 100, 100);
+            this.drawArrow("Rotation");
             strokeWeight(1);
         } else strokeWeight(1);
 
@@ -472,8 +479,8 @@ class Bar {
                 strokeWeight(1);
                 stroke(255);
                 noFill();
-                ellipse(centre.x, centre.y, 100, 100);
-                if (mouseDistance < 55 && mouseDistance > 45) {
+                this.drawArrow("Rotation");
+                if (mouseDistance < 57 && mouseDistance > 43) {
                     this.mouseTarget = "Turn";
                     return true;
                 } else {
@@ -548,11 +555,19 @@ class Bar {
                 line(target.x, target.y, target.x + (10 * cos(this.body.angle - (Math.PI / 4) * 7)), target.y + (10 * sin(this.body.angle - (Math.PI / 4) * 7)));
                 line(target.x, target.y, target.x + (10 * cos(this.body.angle - (Math.PI / 4))), target.y + (10 * sin(this.body.angle - (Math.PI / 4))));
                 break;
+            case "Rotation":
+                var centre = Vertices.centre(this.body.vertices);
+                var arrowLength = Math.PI / 40;
+                ellipse(centre.x, centre.y, 100, 100);5
+                line(centre.x + 50 * cos(this.body.angle - (Math.PI / 2) + arrowLength), centre.y + 50 * sin(this.body.angle - (Math.PI / 2) + arrowLength), centre.x + 57 * cos(this.body.angle - (Math.PI / 2) - arrowLength), centre.y + 57 * sin(this.body.angle - (Math.PI / 2) - arrowLength));
+                line(centre.x + 50 * cos(this.body.angle - (Math.PI / 2) + arrowLength), centre.y + 50 * sin(this.body.angle - (Math.PI / 2) + arrowLength), centre.x + 43 * cos(this.body.angle - (Math.PI / 2) - arrowLength), centre.y + 43 * sin(this.body.angle - (Math.PI / 2) - arrowLength));
+                line(centre.x + 50 * cos(this.body.angle + (Math.PI / 2) + arrowLength), centre.y + 50 * sin(this.body.angle + (Math.PI / 2) + arrowLength), centre.x + 57 * cos(this.body.angle + (Math.PI / 2) - arrowLength), centre.y + 57 * sin(this.body.angle + (Math.PI / 2) - arrowLength));
+                line(centre.x + 50 * cos(this.body.angle + (Math.PI / 2) + arrowLength), centre.y + 50 * sin(this.body.angle + (Math.PI / 2) + arrowLength), centre.x + 43 * cos(this.body.angle + (Math.PI / 2) - arrowLength), centre.y + 43 * sin(this.body.angle + (Math.PI / 2) - arrowLength));
+                break;
         }
     }
 
     updateTransform(mode) {
-        print(mode);
         var mouseMoveX = (mouseX - pmouseX);
         var mouseMoveY = (mouseY - pmouseY);
         var centre = Vertices.centre(this.body.vertices);
@@ -743,7 +758,6 @@ function mousePressed() {
 function mouseReleased() {
     if(!isMobile || isMobile){
         
-        print("release");
         for (let b of bars) {
             b.mouseUp();
         }
