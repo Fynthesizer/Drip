@@ -284,6 +284,10 @@ class Bar {
             this.freq = midiToFreq(this.freq);
         }
         this.modAmount = map(this.h, 15, 50, this.freq * modMultiplier, 0);
+        
+        this.mouseA;
+        this.pmouseA;
+        this.mouseMoveA;
 
         //Main Envelope
         this.env = new p5.Env();
@@ -570,7 +574,13 @@ class Bar {
     updateTransform(mode) {
         var mouseMoveX = (mouseX - pmouseX);
         var mouseMoveY = (mouseY - pmouseY);
+        
         var centre = Vertices.centre(this.body.vertices);
+        
+        this.mouseA = atan2(mouseY - centre.y, mouseX - centre.x);
+        if (this.pmouseA != undefined) this.mouseMoveA = this.mouseA - this.pmouseA;
+        else this.mouseMoveA = 0;
+        this.pmouseA = this.mouseA;
         
         switch (mode) {
             case "Move":
@@ -649,7 +659,7 @@ class Bar {
             ]);
                 break;
             case "Turn":
-                Body.rotate(this.body, (mouseMoveX + mouseMoveY) / 100);
+                Body.rotate(this.body, this.mouseMoveA);
                 break;
             default:
                 break;
@@ -673,6 +683,10 @@ class Bar {
     checkIfClicked() {
         if (isMobile) this.checkMouseTarget();
         this.transformMode = this.mouseTarget;
+        this.mouseA = atan2(mouseY - Vertices.centre(this.body.vertices).y, mouseX - Vertices.centre(this.body.vertices).x);
+        //if (this.pmouseA != undefined) this.mouseMoveA = this.mouseA - this.pmouseA;
+        //else this.mouseMoveA = 0;
+        this.pmouseA = this.mouseA;
         if (this.transformMode != null) return true;
     }
 
@@ -769,9 +783,9 @@ function mouseReleased() {
 
 function touchMoved() {
    
-        for (let b of bars) {
-            if(b.transformMode != null) b.updateTransform(b.transformMode);
-        }
+    for (let b of bars) {
+        if(b.transformMode != null) b.updateTransform(b.transformMode);
+    }
     
 }
 
