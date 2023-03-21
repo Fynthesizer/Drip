@@ -406,10 +406,11 @@ class Bar {
     this.env.setADSR(0.01, this.decay, 0.0, this.decay);
     this.freq = maxFreq / this.w;
     if (tuneNotes) {
-      this.freq = freqToMidi(this.freq);
-      this.freq = tuneNote(this.freq);
-      this.freq = midiToFreq(this.freq);
+      this.pitch = freqToMidi(this.freq);
+      this.pitch = tuneNote(this.pitch);
+      this.freq = midiToFreq(this.pitch);
     }
+
     this.osc.freq(this.freq);
     this.osc.pan(map(pos.x, 0, width, -1, 1));
     this.sound.rate(this.freq / 523.25);
@@ -835,7 +836,6 @@ class Bar {
       this.env.setRange(map(magnitude, 0, 10, 0.1, 0.3), 0.0);
       let attack = map(magnitude, 0, 2, 0.3, 0.01);
       if (attack < 0.01) attack = 0.01;
-      console.log(attack);
       if (attack <= 0.05) attack = 0.01;
       this.env.setADSR(attack, this.decay, 0.0, this.decay);
       this.env.play();
@@ -908,7 +908,7 @@ function mousePressed() {
         new Bar(
           mouseX,
           mouseY,
-          random(60, 300),
+          pitchToWidth(findUnusedPitch()),
           random(25, 50),
           random(Math.PI / -4, Math.PI / 4)
         )
@@ -1049,4 +1049,26 @@ function windowResized() {
 
 function dotProduct(vector1, vector2) {
   return (vector1.x * vector2.x + vector1.y * vector2.y) * -1;
+}
+
+function findUnusedPitch() {
+  let usedPitches = [];
+  let attempts = 0;
+  for (let i = 0; i < bars.length; i++) {
+    usedPitches.push(bars[i].pitch);
+  }
+  let randomPitch;
+
+  while (attempts < 40) {
+    randomPitch = random(60, 95);
+    if (tuneNotes) randomPitch = tuneNote(randomPitch);
+    if (!usedPitches.includes(randomPitch)) break;
+  }
+
+  return randomPitch;
+}
+
+function pitchToWidth(pitch) {
+  let freq = midiToFreq(pitch);
+  return maxFreq / freq;
 }
