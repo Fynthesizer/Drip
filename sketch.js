@@ -28,7 +28,7 @@ var waves = [];
 
 var reverb, delay;
 
-var collisionThreshold = 2;
+var collisionThreshold = 0.1;
 
 var tuneNotes = true;
 var keySig = [0, 2, 4, 5, 7, 9, 10];
@@ -129,10 +129,12 @@ class Dripper {
 
     this.rotation = Math.PI / 2;
 
-    this.dripSound = loadSound("drip");
-    this.dripSound.connect(reverb);
-    this.dripSound.amp(0.5);
-    this.dripSound.pan(map(this.x, 0, width, -1, 1));
+    this.dripSounds = [];
+    for (let i = 0; i < 4; i++) {
+      this.dripSounds[i] = loadSound("drip" + i);
+      this.dripSounds[i].amp(0.3);
+      this.dripSounds[i].connect(reverb);
+    }
   }
 
   update() {
@@ -220,11 +222,19 @@ class Dripper {
       if (mouseX <= 5 || mouseX >= width - 5) this.readyToDelete = true;
       else this.readyToDelete = false;
 
-      this.dripSound.pan(map(this.x, 0, width, -1, 1));
+      //this.dripSound.pan(map(this.x, 0, width, -1, 1));
     }
     if (this.transformMode == "Turn") {
       this.rotation -= (mouseX - pmouseX) / 30;
     }
+  }
+
+  playDripSound() {
+    let dripSound =
+      this.dripSounds[Math.floor(Math.random() * this.dripSounds.length)];
+    dripSound.rate(random(0.5, 1.5));
+    dripSound.pan(map(this.x, 0, width, -1, 1));
+    dripSound.play();
   }
 
   checkMouseTarget() {
@@ -253,8 +263,7 @@ class Dripper {
 
   drip() {
     droplets.push(new Droplet(this.x, zoneY, 6));
-    this.dripSound.rate(random(0.5, 1.5));
-    this.dripSound.play();
+    this.playDripSound();
   }
 }
 
@@ -281,8 +290,6 @@ class Droplet {
     this.trailY.unshift(pos.y);
     if (this.trailX.length > this.size) this.trailX.pop();
     if (this.trailY.length > this.size) this.trailY.pop();
-
-    console.log(this.trail);
 
     var angle = this.body.angle;
 
@@ -490,8 +497,11 @@ class Bar {
       var collision = Matter.SAT.collides(this.body, d.body);
 
       if (collision.collided) {
+        var magnitude = dotProduct(collision.normal, collision.bodyB.velocity);
+        if (magnitude < 0) magnitude *= -1;
+
         this.strike(
-          collision.bodyB.speed,
+          magnitude,
           collision.bodyB.position.x,
           collision.bodyB.position.y
         );
@@ -822,7 +832,12 @@ class Bar {
   strike(magnitude, x, y) {
     if (magnitude > collisionThreshold) {
       if (this.sound.isLoaded()) this.sound.play();
-      this.env.setRange(map(magnitude, 0, 20, 0.0, 0.3), 0.0);
+      this.env.setRange(map(magnitude, 0, 10, 0.1, 0.3), 0.0);
+      let attack = map(magnitude, 0, 2, 0.3, 0.01);
+      if (attack < 0.01) attack = 0.01;
+      console.log(attack);
+      if (attack <= 0.05) attack = 0.01;
+      this.env.setADSR(attack, this.decay, 0.0, this.decay);
       this.env.play();
       //this.env2.play();
       this.struck = map(magnitude, 0, 20, 0.0, 1.0);
@@ -844,7 +859,6 @@ class Bar {
   destroy() {
     World.remove(world, this.body);
     this.osc.stop();
-    this.mod.stop();
     bars.splice(bars.indexOf(this), 1);
   }
 }
@@ -1031,4 +1045,8 @@ function tuneNote(note) {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+}
+
+function dotProduct(vector1, vector2) {
+  return (vector1.x * vector2.x + vector1.y * vector2.y) * -1;
 }
