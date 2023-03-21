@@ -261,6 +261,8 @@ class Dripper {
 class Droplet {
   constructor(x, y, size) {
     this.size = size;
+    this.trailX = [];
+    this.trailY = [];
     this.body = Bodies.circle(x, y, size / 2, {
       restitution: 1.0,
       friction: 0.01,
@@ -274,12 +276,30 @@ class Droplet {
 
   update() {
     var pos = this.body.position;
+
+    this.trailX.unshift(pos.x);
+    this.trailY.unshift(pos.y);
+    if (this.trailX.length > this.size) this.trailX.pop();
+    if (this.trailY.length > this.size) this.trailY.pop();
+
+    console.log(this.trail);
+
     var angle = this.body.angle;
-    //fill(255);
-    //noStroke();
+
+    for (let i = 1; i < this.trailX.length; i++) {
+      strokeWeight(this.size - i);
+      stroke(255, 255, 255, 127 - i * 20);
+
+      line(
+        this.trailX[i],
+        this.trailY[i],
+        this.trailX[i - 1],
+        this.trailY[i - 1]
+      );
+    }
+
     strokeWeight(this.size);
     stroke(255);
-    //ellipse(0,0,this.size,this.size);
     point(pos.x, pos.y);
 
     if (pos.y > height) this.destroy();
