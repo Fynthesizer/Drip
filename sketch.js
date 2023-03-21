@@ -26,7 +26,7 @@ var droplets = [];
 var bars = [];
 var waves = [];
 
-var reverb;
+var reverb, delay;
 
 var collisionThreshold = 2;
 
@@ -36,7 +36,7 @@ var drawWaves = true;
 
 var zoneY = 50;
 
-var maxFreq = 80000;
+var maxFreq = 100000;
 var modMultiplier = 3;
 var modIndex = 20;
 var widthRange = {
@@ -54,7 +54,9 @@ for (var i = 1; i <= 8; i++) {
   setInterval(metronome, 60000 / tempo / i, i);
 }
 
-function preload() {}
+function preload() {
+  soundFormats("wav");
+}
 
 function setup() {
   engine = Engine.create({
@@ -63,6 +65,10 @@ function setup() {
   world = engine.world;
   reverb = new p5.Reverb();
   reverb.set(6, 2);
+
+  delay = new p5.Delay();
+  delay.delayTime(0.5);
+  delay.feedback(0.5);
   Engine.run(engine);
 
   backgroundColour = color(19, 21, 23);
@@ -122,6 +128,11 @@ class Dripper {
     this.transformMode = null;
 
     this.rotation = Math.PI / 2;
+
+    this.dripSound = loadSound("drip");
+    this.dripSound.connect(reverb);
+    this.dripSound.amp(0.5);
+    this.dripSound.pan(map(this.x, 0, width, -1, 1));
   }
 
   update() {
@@ -208,6 +219,8 @@ class Dripper {
       else this.x = mouseX;
       if (mouseX <= 5 || mouseX >= width - 5) this.readyToDelete = true;
       else this.readyToDelete = false;
+
+      this.dripSound.pan(map(this.x, 0, width, -1, 1));
     }
     if (this.transformMode == "Turn") {
       this.rotation -= (mouseX - pmouseX) / 30;
@@ -240,6 +253,8 @@ class Dripper {
 
   drip() {
     droplets.push(new Droplet(this.x, zoneY, 6));
+    this.dripSound.rate(random(0.5, 1.5));
+    this.dripSound.play();
   }
 }
 
@@ -283,13 +298,6 @@ class Bar {
     this.h = h;
     this.a = a;
     this.struck = 0.0;
-    this.freq = maxFreq / this.w;
-    if (tuneNotes) {
-      this.freq = freqToMidi(this.freq);
-      this.freq = tuneNote(this.freq);
-      this.freq = midiToFreq(this.freq);
-    }
-    this.modAmount = map(this.h, 15, 50, this.freq * modMultiplier, 0);
 
     this.mouseA;
     this.pmouseA;
@@ -297,40 +305,18 @@ class Bar {
 
     //Main Envelope
     this.env = new p5.Env();
-    this.env.setADSR(0.001, 0.5, 0.0, 0.5);
-    this.env.setRange(0.2, 0.0);
 
-    //Pitch Envelope
-    this.pitchEnv = new p5.Env();
-    this.pitchEnv.setADSR(0.0, 0.02, 0.0, 1.0);
-    this.pitchEnv.setRange(-6.0, 0.0);
-
-    //Frequency Mod
-    this.mod = new p5.Oscillator();
-    this.mod.amp(this.modAmount);
-    this.mod.freq(this.freq * modIndex);
-    this.mod.disconnect();
-    //this.mod.start();
+    this.sound = loadSound("glockenspiel");
+    this.sound.connect(reverb);
+    this.sound.connect(delay);
+    this.sound.amp(this.env);
 
     //Main Oscillator
     this.osc = new p5.Oscillator();
     this.osc.amp(this.env);
-    this.osc.freq(this.freq);
-    this.osc.freq(this.mod);
-    //this.osc.freq(this.pitchEnv.mult(50));
-    this.osc.pan(map(x, 0, width, -1, 1));
     this.osc.connect(reverb);
+    this.osc.connect(delay);
     this.osc.start();
-
-    //Second Oscillator
-    this.osc2 = new p5.Oscillator();
-    this.osc2.amp(this.env);
-    this.osc2.freq(this.freq * 8);
-    //this.osc.freq(this.mod);
-    //this.osc.freq(this.pitchEnv.mult(50));
-    this.osc2.pan(map(x, 0, width, -1, 1));
-    this.osc2.connect(reverb);
-    this.osc2.start();
 
     this.body = Bodies.rectangle(x, y, w, h, {
       isStatic: true,
@@ -338,6 +324,7 @@ class Bar {
         category: 0o2,
       },
     });
+
     Body.setAngle(this.body, a);
     World.add(world, this.body);
 
@@ -381,6 +368,25 @@ class Bar {
 
     this.startVertices = this.vertices;
     this.newVertices = this.vertices;
+
+    this.updateParameters();
+  }
+
+  updateParameters() {
+    var pos = Vertices.centre(this.body.vertices);
+
+    this.decay = map(this.h, 15, 50, 0.3, 0.75);
+    this.env.setADSR(0.01, this.decay, 0.0, this.decay);
+    this.freq = maxFreq / this.w;
+    if (tuneNotes) {
+      this.freq = freqToMidi(this.freq);
+      this.freq = tuneNote(this.freq);
+      this.freq = midiToFreq(this.freq);
+    }
+    this.osc.freq(this.freq);
+    this.osc.pan(map(pos.x, 0, width, -1, 1));
+    this.sound.rate(this.freq / 523.25);
+    this.sound.pan(map(pos.x, 0, width, -1, 1));
   }
 
   update() {
@@ -771,19 +777,7 @@ class Bar {
         break;
     }
 
-    var pos = Vertices.centre(this.body.vertices);
-    this.osc.pan(map(pos.x, 0, width, -1, 1), 0.1);
-    this.freq = maxFreq / this.w;
-    if (tuneNotes) {
-      this.freq = freqToMidi(this.freq);
-      this.freq = tuneNote(this.freq);
-      this.freq = midiToFreq(this.freq);
-    }
-    this.modAmount = map(this.h, 15, 50, this.freq * modMultiplier, 0);
-    this.mod.amp(this.modAmount, 0.1);
-    this.osc.freq(this.freq, 0.25);
-    this.osc2.freq(this.freq * 8, 0.25);
-    this.mod.freq(this.freq * modIndex, 0.4);
+    this.updateParameters();
   }
 
   checkIfClicked() {
@@ -807,18 +801,21 @@ class Bar {
 
   strike(magnitude, x, y) {
     if (magnitude > collisionThreshold) {
+      if (this.sound.isLoaded()) this.sound.play();
       this.env.setRange(map(magnitude, 0, 20, 0.0, 0.3), 0.0);
-      this.pitchEnv.play();
       this.env.play();
+      //this.env2.play();
       this.struck = map(magnitude, 0, 20, 0.0, 1.0);
       if (drawWaves) waves.push(new wave(x, y, magnitude));
     }
 
     //Bug fix for magnitude 0 collisions when bar first spawns
     else if (magnitude == 0) {
+      if (this.sound.isLoaded()) this.sound.play();
       this.env.setRange(0.15);
-      this.pitchEnv.play();
+      //this.pitchEnv.play();
       this.env.play();
+      //this.env2.play();
       this.struck = 0.5;
       if (drawWaves) waves.push(new wave(x, y, 10));
     }
@@ -877,8 +874,8 @@ function mousePressed() {
         new Bar(
           mouseX,
           mouseY,
-          random(50, 300),
-          random(20, 50),
+          random(60, 300),
+          random(25, 50),
           random(Math.PI / -4, Math.PI / 4)
         )
       );
