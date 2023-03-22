@@ -21,6 +21,8 @@ var mouseBounds;
 var mouseStartX;
 var mouseStartY;
 
+var dripSamples = ["drip0", "drip1", "drip2"];
+
 var drippers = [];
 var droplets = [];
 var bars = [];
@@ -130,9 +132,9 @@ class Dripper {
     this.rotation = Math.PI / 2;
 
     this.dripSounds = [];
-    for (let i = 0; i < 4; i++) {
-      this.dripSounds[i] = loadSound("drip" + i);
-      this.dripSounds[i].amp(0.3);
+    for (let i = 0; i < dripSamples.length; i++) {
+      this.dripSounds[i] = loadSound(dripSamples[i]);
+      this.dripSounds[i].amp(0.5);
       this.dripSounds[i].connect(reverb);
     }
   }
@@ -225,7 +227,9 @@ class Dripper {
       //this.dripSound.pan(map(this.x, 0, width, -1, 1));
     }
     if (this.transformMode == "Turn") {
-      this.rotation -= (mouseX - pmouseX) / 30;
+      let delta = (mouseX - pmouseX) / -15;
+      if (!(delta < 0 && this.rate >= 8) && !(delta > 0 && this.rate <= 0))
+        this.rotation += delta;
     }
   }
 
